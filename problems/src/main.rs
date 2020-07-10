@@ -1,7 +1,7 @@
-use common::base64;
+use crypto::common::base64;
 
 fn main() {
     let string = String::from("I'm killing your brain like a poisonous mushroom");
 
-    println!("{}", base64::base64_encode(string.as_bytes()));
+    println!("{}", base64::encode(string.as_bytes()));
 }
