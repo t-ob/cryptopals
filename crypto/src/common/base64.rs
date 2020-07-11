@@ -312,4 +312,24 @@ mod tests {
             )
         }
     }
+
+    mod encode_decode {
+        use super::*;
+
+        #[test]
+        #[ignore]
+        fn test_encode_decode_over_all_3_byte_values() {
+            for value in 0..0x1000000 {
+                let bytes: [u8; 3] = [
+                    ((value & 0xFF0000) >> 0x10) as u8,
+                    ((value & 0xFF00) >> 0x8) as u8,
+                    (value & 0xFF) as u8,
+                ];
+                let round_trip = decode(&encode(&bytes[..])).unwrap();
+                let result: [u8; 3] = [round_trip[0], round_trip[1], round_trip[2]];
+
+                assert_eq!(bytes, result);
+            }
+        }
+    }
 }
