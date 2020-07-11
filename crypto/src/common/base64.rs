@@ -267,14 +267,6 @@ mod tests {
         fn test_two_bytes_maps_to_four_b64_chars_with_padding() {
             assert_eq!(encode(&[0x49, 0x27]), String::from("SSc="))
         }
-        #[test]
-        fn test_cryptopals_set_1_problem_1_passes() {
-            let string = String::from("I'm killing your brain like a poisonous mushroom");
-            assert_eq!(
-                encode(string.as_bytes()),
-                String::from("SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t")
-            )
-        }
     }
 
     mod decode {
@@ -302,14 +294,6 @@ mod tests {
         #[test]
         fn test_decoding_with_two_padding_maps_to_one_byte() {
             assert_eq!(decode("SQ==").unwrap(), Vec::from([0x49]))
-        }
-
-        #[test]
-        fn test_cryptopals_set_1_problem_1_passes() {
-            assert_eq!(
-                decode("SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t").unwrap(),
-                String::from("I'm killing your brain like a poisonous mushroom").as_bytes()
-            )
         }
     }
 
