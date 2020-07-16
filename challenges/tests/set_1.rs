@@ -1,6 +1,10 @@
 mod set_1 {
     use crypto::common::{base64, hex, plaintext_utils, xor};
+    use std::env;
+    use std::fs::File;
+    use std::io::{self, BufRead};
     use std::ops::Range;
+    use std::path::PathBuf;
 
     #[test]
     fn challenge_1() {
@@ -45,5 +49,42 @@ mod set_1 {
         .unwrap();
 
         assert_eq!(best, "Cooking MC's like a pound of bacon")
+    }
+
+    #[test]
+    fn challenge_4() {
+        let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        d.push("resources/set_1/4.txt");
+
+        let file = File::open(d).unwrap();
+
+        let lines = io::BufReader::new(file).lines();
+
+        let best_candidates = lines.map(|line| {
+            let input = hex::decode(&(line.unwrap())[..]).unwrap();
+            let ascii: Range<u8> = 0..0x80;
+
+            let highest_scoring_byte = ascii
+                .map(|b| {
+                    let output = xor::xor_buffers(&input, &vec![b; input.len()]);
+                    (plaintext_utils::score_english_plaintext(&output), b)
+                })
+                .max_by(|(a, _), (b, _)| a.partial_cmp(b).unwrap())
+                .unwrap();
+
+            let best = xor::xor_buffers(&input, &vec![highest_scoring_byte.1; input.len()]);
+
+            (highest_scoring_byte.0, best)
+        });
+
+        let answer = best_candidates
+            .max_by(|(a, _), (b, _)| a.partial_cmp(b).unwrap())
+            .unwrap()
+            .1;
+
+        assert_eq!(
+            String::from_utf8(answer).unwrap(),
+            "Now that the party is jumping\n"
+        )
     }
 }
