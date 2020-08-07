@@ -4,3 +4,5 @@ pub mod common {
     pub mod xor;
     pub mod plaintext_utils;
 }
+
+pub mod aes;

@@ -1,4 +1,5 @@
 mod set_1 {
+    use crypto::aes;
     use crypto::common::{base64, hex, plaintext_utils, xor};
     use std::env;
     use std::fs::File;
@@ -103,5 +104,31 @@ mod set_1 {
         let output = xor::xor_buffers(input, &key);
 
         assert_eq!(output, hex::decode("0b3637272a2b2e63622c2e69692a23693a2a3c6324202d623d63343c2a26226324272765272a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f").unwrap())
+    }
+
+    #[test]
+    fn challenge_7() {
+        let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        d.push("resources/set_1/7.txt");
+
+        let file = File::open(d).unwrap();
+
+        let lines = io::BufReader::new(file).lines();
+
+        let mut ciphertext: Vec<u8> = Vec::new();
+
+        lines.for_each(|line| {
+            let chunk = base64::decode(&(line.unwrap())[..]).unwrap();
+            ciphertext.extend(chunk);
+        });
+
+        let mut key: [u8; 0x10] = [0; 0x10];
+        key.copy_from_slice("YELLOW SUBMARINE".as_bytes());
+
+        let plaintext_bytes = aes::decrypt_ecb(&key, &ciphertext).unwrap();
+
+        let plaintext = String::from_utf8(plaintext_bytes).unwrap();
+
+        assert!(plaintext.starts_with("I'm back and I'm ringin' the bell"));
     }
 }
