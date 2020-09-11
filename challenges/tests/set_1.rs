@@ -1,6 +1,7 @@
 mod set_1 {
     use crypto::aes;
     use crypto::common::{base64, hamming, hex, plaintext_utils, xor};
+    use std::collections::HashMap;
     use std::env;
     use std::fs::File;
     use std::io::{self, BufRead};
@@ -212,5 +213,40 @@ mod set_1 {
         let plaintext = String::from_utf8(plaintext_bytes).unwrap();
 
         assert!(plaintext.starts_with("I'm back and I'm ringin' the bell"));
+    }
+
+    #[test]
+    fn challenge_8() {
+        let mut path_buf = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        path_buf.push("resources/set_1/8.txt");
+
+        let file = File::open(path_buf).unwrap();
+
+        let lines = io::BufReader::new(file).lines();
+
+        // For each byte sequence, count occurrences of 16-byte chunks.
+        // The one with the most duplicates is a likely candidate for having been ECB-encrypted.
+        let ecb_encrypted = lines
+            .map(|line| {
+                let ciphertext = hex::decode(&line.unwrap()).unwrap();
+                let mut counts = HashMap::new();
+
+                ciphertext.chunks(0x10).for_each(|chunk| {
+                    let count = counts.entry(chunk).or_insert(0);
+                    *count += 1;
+                });
+
+                let duplicates = counts.values().filter(|c| **c > 1).fold(0, |a, x| a + x);
+
+                (duplicates, ciphertext)
+            })
+            .max_by(|(a, _), (c, _)| a.cmp(c))
+            .unwrap()
+            .1;
+
+        assert_eq!(
+            ecb_encrypted,
+            hex::decode("D880619740A8A19B7840A8A31C810A3D08649AF70DC06F4FD5D2D69C744CD283E2DD052F6B641DBF9D11B0348542BB5708649AF70DC06F4FD5D2D69C744CD2839475C9DFDBC1D46597949D9C7E82BF5A08649AF70DC06F4FD5D2D69C744CD28397A93EAB8D6AECD566489154789A6B0308649AF70DC06F4FD5D2D69C744CD283D403180C98C8F6DB1F2A3F9C4040DEB0AB51B29933F2C123C58386B06FBA186A").unwrap()
+        )
     }
 }
