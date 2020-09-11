@@ -3,6 +3,7 @@ pub mod common {
     pub mod hex;
     pub mod xor;
     pub mod plaintext_utils;
+    pub mod hamming;
 }
 
 pub mod aes;
