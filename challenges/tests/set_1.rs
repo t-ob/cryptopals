@@ -1,6 +1,6 @@
 mod set_1 {
     use crypto::aes;
-    use crypto::common::{base64, hex, plaintext_utils, xor};
+    use crypto::common::{base64, hamming, hex, plaintext_utils, xor};
     use std::env;
     use std::fs::File;
     use std::io::{self, BufRead};
@@ -104,6 +104,88 @@ mod set_1 {
         let output = xor::xor_buffers(input, &key);
 
         assert_eq!(output, hex::decode("0b3637272a2b2e63622c2e69692a23693a2a3c6324202d623d63343c2a26226324272765272a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f").unwrap())
+    }
+
+    #[test]
+    fn challenge_6() {
+        let mut path_buf = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        path_buf.push("resources/set_1/6.txt");
+
+        let file = File::open(path_buf).unwrap();
+
+        let lines = io::BufReader::new(file).lines();
+
+        let mut ciphertext: Vec<u8> = Vec::new();
+
+        lines.for_each(|line| {
+            let chunk = base64::decode(&(line.unwrap())[..]).unwrap();
+            ciphertext.extend(chunk);
+        });
+
+        // Guess key size:
+        // For each key size in 2..40, partition ciphertext into pairs of chunks of key_size bytes.
+        // Compute a (normalised) pairwise Hamming distance between each pair, and take their average.
+        // Return the key size with the lowest score.
+        let key_size = (2..40)
+            .map(|key_size| {
+                let lhs_chunks = ciphertext.chunks(key_size).step_by(2);
+                let rhs_chunks = ciphertext.chunks(key_size).skip(1).step_by(2);
+                let score = lhs_chunks
+                    .zip(rhs_chunks)
+                    .map(|(x, y)| hamming::distance(x, y) as f64 / key_size as f64)
+                    .fold(0.0, |x, y| x + y as f64)
+                    / (ciphertext.len() as f64 / (2.0 * key_size as f64));
+                (key_size, score)
+            })
+            .min_by(|lhs_key_size_score, rhs_key_size_score| {
+                lhs_key_size_score
+                    .1
+                    .partial_cmp(&rhs_key_size_score.1)
+                    .unwrap()
+            })
+            .unwrap()
+            .0;
+
+        // Guess key:
+        // Create key_size blocks from ciphertext, where the i-th block consists of the ciphertext bytes whose
+        // index in ciphertext is congruent to i (mod key_size).
+        // If the guessed key size is correct, each block is encrypted by a single-byte xor, which is recovered
+        // by frequency analysis
+        let key: Vec<u8> = (0..key_size)
+            .map(|offset| {
+                let single_xor_block: Vec<u8> = ciphertext
+                    .iter()
+                    .skip(offset)
+                    .step_by(key_size)
+                    .cloned()
+                    .collect();
+                let ascii: Range<u8> = 0..0x80;
+
+                ascii
+                    .map(|b| {
+                        let output =
+                            xor::xor_buffers(&single_xor_block, &vec![b; single_xor_block.len()]);
+                        (plaintext_utils::score_english_plaintext(&output), b)
+                    })
+                    .max_by(|(lhs_score_byte, _), (rhs_score_byte, _)| {
+                        lhs_score_byte.partial_cmp(rhs_score_byte).unwrap()
+                    })
+                    .unwrap()
+                    .1
+            })
+            .collect();
+
+        // Create xor key schedule:
+        // Now we know the key, cycle it and take exactly ciphertext.len() bytes of it.
+        // This is what we use to xor against the original ciphertext to recover the plaintext.
+        let key_schedule: Vec<u8> = key.iter().cycle().take(ciphertext.len()).cloned().collect();
+        let plaintext = String::from_utf8(xor::xor_buffers(&ciphertext, &key_schedule)).unwrap();
+
+        assert_eq!(
+            String::from_utf8(key).unwrap(),
+            "Terminator X: Bring the noise"
+        );
+        assert!(plaintext.starts_with("I'm back and I'm ringin' the bell \nA rockin' on the mike while the fly girls yell \nIn ecstasy in the back of me \nWell that's my DJ Deshay cuttin' all them Z's"));
     }
 
     #[test]
