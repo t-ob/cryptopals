@@ -22,16 +22,7 @@ fn main() -> io::Result<()> {
     for line in io::stdin().lines() {
         match mode {
             Mode::Text => buffer.extend_from_slice(line?.as_bytes()),
-            Mode::Hex => {
-                match hex::decode(&line?) {
-                    Ok(bytes) => buffer.extend(bytes),
-                    Err(err) => {
-                        eprintln!("{:?}", err);
-                        return Err(io::Error::new(io::ErrorKind::Other, "DecodeError"));
-                    }
-                }
-
-            }
+            Mode::Hex => buffer.extend(hex::decode(&line?)?)
         }
     }
 

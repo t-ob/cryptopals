@@ -7,20 +7,8 @@ use cryptopals::xor;
 fn main() -> io::Result<()> {
     let args: Vec<String> = env::args().collect();
 
-    let lhs = match hex::decode(&args[1]) {
-        Ok(bytes) => bytes,
-        Err(err) => {
-            eprintln!("{:?}", err);
-            return Err(io::Error::new(io::ErrorKind::Other, "DecodeError"));
-        }
-    };
-    let rhs = match hex::decode(&args[2]) {
-        Ok(bytes) => bytes,
-        Err(err) => {
-            eprintln!("{:?}", err);
-            return Err(io::Error::new(io::ErrorKind::Other, "DecodeError"));
-        }
-    };
+    let lhs = hex::decode(&args[1])?;
+    let rhs = hex::decode(&args[2])?;
 
     let result = xor::xor_buffers(&lhs, &rhs);
 
