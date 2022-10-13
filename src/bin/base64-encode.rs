@@ -13,7 +13,7 @@ fn main() -> io::Result<()> {
     let args: Vec<String> = env::args().collect();
 
     let mode = match args.get(1) {
-        Some(s) if *s == "-h".to_string() => Mode::Hex,
+        Some(s) if *s == "-h" => Mode::Hex,
         _ => Mode::Text,
     };
 
@@ -22,7 +22,7 @@ fn main() -> io::Result<()> {
     for line in io::stdin().lines() {
         match mode {
             Mode::Text => buffer.extend_from_slice(line?.as_bytes()),
-            Mode::Hex => buffer.extend(hex::decode(&line?)?)
+            Mode::Hex => buffer.extend(hex::decode(&line?)?),
         }
     }
 

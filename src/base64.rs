@@ -1,4 +1,4 @@
-use crate::common::codec::{DecodeError};
+use crate::common::codec::DecodeError;
 
 const ENCODE_MAPPING: [char; 64] = [
     'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S',
