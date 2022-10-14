@@ -1,7 +1,7 @@
 use std::io;
 
+use cryptopals::common::plaintext_util;
 use cryptopals::hex;
-use cryptopals::plaintext_util;
 use cryptopals::xor;
 
 fn main() -> io::Result<()> {
